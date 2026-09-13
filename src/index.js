@@ -2,6 +2,7 @@ import { encode } from './base64';
 import constants from './constants';
 
 import { createDialog } from './ui/dialog';
+import './answerBridge';
 import { settings } from './modules';
 const { calculateAdjustedScores } = require('./score');
 

@@ -37,7 +37,8 @@ function Overlay() {
         };
         const onMessage = event => {
             if (event.data?.source !== 'etstoolbox' || event.data?.type !== 'reference-answers') return;
-            setAnswers(Array.isArray(event.data.answers) ? event.data.answers : []);
+            const nextAnswers = Array.isArray(event.data.answers) ? event.data.answers : [];
+            setAnswers(nextAnswers);
         };
         const routeTimer = setInterval(() => {
             setCurrentPath(path => (path === location.pathname ? path : location.pathname));
