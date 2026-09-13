@@ -10,7 +10,9 @@
         "webpack": "^5.99.5"
     },
     "scripts": {
-        "watch": "esbuild --watch src/index.js --bundle --define:__VERSION=\\\"1.0.2\\\" --outdir=."
+        "build": "webpack --config webpack.config.prod.js",
+        "test": "node --test",
+        "watch": "webpack --watch --config webpack.config.js"
     },
     "devDependencies": {
         "@babel/core": "^7.26.10",

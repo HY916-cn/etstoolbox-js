@@ -3,6 +3,7 @@ import constants from './constants';
 
 import { createDialog } from './ui/dialog';
 import { settings } from './modules';
+const { calculateAdjustedScores } = require('./score');
 
 function modifyUI() {
     let dialog = createDialog();
@@ -76,18 +77,20 @@ window.addEventListener('DOMContentLoaded', async () => {
                 let o = args.body;
                 let decoded = JSON.parse(atob(args.body));
                 if (decoded[0].r == constants.SyncV2URL && settings.modules.控分) {
-                    console.log('我给你改分来喽☝️🤓', decoded[0].params.real_score, '->', parseFloat(decoded[0].params.question_type_score));
                     let detail = JSON.parse(decoded[0].params.score_detail);
-                    detail.total_score = 5;
-                    detail.real_score = parseFloat(decoded[0].params.question_type_score);
-                    decoded[0].params.score_detail = JSON.stringify(detail);
-                    decoded[0].params.real_score = parseFloat(decoded[0].params.question_type_score);
-                    decoded[0].params.score = 5.0;
-                    record[args.time] = encode(JSON.stringify(decoded));
-                    console.log(record);
+                    let scores = calculateAdjustedScores(decoded[0].params.question_type_score, settings.modules.控分_cfg['得分百分比（0-100）'], decoded[0].params.graduation);
+                    if (scores) {
+                        console.log('控分：', decoded[0].params.real_score, '->', scores.questionScore, `(${scores.percentage}%)`);
+                        detail.total_score = 5;
+                        detail.real_score = scores.questionScore;
+                        decoded[0].params.score_detail = JSON.stringify(detail);
+                        decoded[0].params.real_score = scores.questionScore;
+                        decoded[0].params.score = scores.normalizedScore;
+                        record[args.time] = encode(JSON.stringify(decoded));
+                    }
                 }
-                if (decoded[0].r == constants.SetUseTimeURL && settings.modules.控制时间) {
-                    decoded[0].params.use_time = settings.modules.控制时间_cfg.时间;
+                if (decoded[0].r == constants.SetUseTimeURL && settings.modules.作业提交用时) {
+                    decoded[0].params.use_time = settings.modules.作业提交用时_cfg['时间（秒）'];
                     record[args.time] = encode(JSON.stringify(decoded));
                 }
                 //#region 编码

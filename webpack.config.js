@@ -3,10 +3,13 @@ const { webpack, DefinePlugin } = require('webpack');
 module.exports = {
     mode: 'development',
     devtool: 'source-map',
-    entry: './src/index.js',
+    entry: {
+        index: './src/index.js',
+        'index.iframe': './src/index.iframe.js'
+    },
     output: {
         path: path.resolve(__dirname),
-        filename: 'index.js'
+        filename: '[name].js'
     },
     module: {
         rules: [
@@ -24,7 +27,7 @@ module.exports = {
     },
     plugins: [
         new DefinePlugin({
-            __VERSION: '\"1.0.2\"'
+            __VERSION: '\"1.0.3-internal.2\"'
         })
     ]
 };

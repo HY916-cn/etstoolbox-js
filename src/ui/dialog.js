@@ -1,130 +1,120 @@
-import { appendStyle, createElement } from './ui';
+import { createElement } from './ui';
 import { createRoot } from 'react-dom/client';
-import React, { useState, useId, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import './style';
-import { events, modules } from '../modules';
+import { modules } from '../modules';
 import Switch from './components/switch';
 
-function SettingsItem(props) {}
+function ConfigInput({ module, configName }) {
+    let value = module.configs[configName];
+
+    switch (typeof value) {
+        case 'boolean':
+            return (
+                <Switch
+                    defaultChecked={value}
+                    onChange={event => {
+                        module.configs[configName] = event.currentTarget.checked;
+                        module.saveConfigs();
+                    }}
+                ></Switch>
+            );
+        case 'string':
+            return (
+                <input
+                    defaultValue={value}
+                    onChange={event => {
+                        module.configs[configName] = event.currentTarget.value;
+                        module.saveConfigs();
+                    }}
+                ></input>
+            );
+        case 'number': {
+            let isPercentage = configName == '得分百分比（0-100）';
+            return (
+                <input
+                    defaultValue={value}
+                    type="number"
+                    min="0"
+                    max={isPercentage ? '100' : undefined}
+                    step={isPercentage ? '0.01' : '1'}
+                    onChange={event => {
+                        let nextValue = event.currentTarget.valueAsNumber;
+                        if (!Number.isFinite(nextValue)) return;
+                        nextValue = Math.max(0, nextValue);
+                        if (isPercentage) nextValue = Math.round(Math.min(100, nextValue) * 100) / 100;
+                        else nextValue = Math.round(nextValue);
+                        event.currentTarget.value = nextValue;
+                        module.configs[configName] = nextValue;
+                        module.saveConfigs();
+                    }}
+                ></input>
+            );
+        }
+    }
+}
+
+function SettingsItem({ module }) {
+    let [expanded, setExpanded] = useState(false);
+    let configNames = Object.keys(module.configs);
+
+    return (
+        <div className={`settings-row-container${expanded ? ' expand' : ''}`}>
+            <div className="settings-row">
+                <label className="lb">
+                    {module.name}
+                    <br></br>
+                    <span className="desc">{module.description}</span>
+                </label>
+                <div className="item">
+                    {configNames.length > 0 ? (
+                        <button className="config-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+                            {expanded ? '收起设置' : '展开设置'}
+                        </button>
+                    ) : undefined}
+                    <Switch
+                        defaultChecked={module.enabled}
+                        onChange={event => {
+                            module.enabled = event.currentTarget.checked;
+                        }}
+                    ></Switch>
+                </div>
+            </div>
+            <div className="config">
+                {configNames.map(configName => (
+                    <div className="et-row" key={configName}>
+                        <label className="lb">{configName}</label>
+                        <div className="item">
+                            <ConfigInput module={module} configName={configName}></ConfigInput>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export function createDialog() {
-    let d = createElement('dialog', document.body, { id: 'ets-dialog' });
-    let dialogRoot = createRoot(d);
+    let dialog = createElement('dialog', document.body, { id: 'ets-dialog' });
+    let dialogRoot = createRoot(dialog);
     let categories = Object.keys(modules);
-    let contents = {};
-    categories.forEach(c => {
-        let ca = modules[c];
-        contents[c] = () => (
-            <>
-                {Object.values(ca).map(m => {
-                    return (
-                        <div
-                            className="settings-row-container"
-                            onContextMenu={e => {
-                                e.currentTarget.classList.toggle('expand');
-                            }}
-                        >
-                            <div className="settings-row">
-                                <label className="lb">
-                                    {m.name}
-                                    <br></br>
-                                    <span className="desc">{m.description}</span>
-                                </label>
-                                <div className="item">
-                                    <Switch
-                                        defaultChecked={m.enabled}
-                                        onChange={e => {
-                                            m.enabled = e.currentTarget.checked;
-                                        }}
-                                    ></Switch>
-                                </div>
-                            </div>
-                            <div className="config">
-                                {(() =>
-                                    Object.keys(m.configs).map(c => {
-                                        let v = m.configs[c];
-                                        return (
-                                            <div className="et-row">
-                                                <label className="lb">{c}</label>
-                                                <div className="item">
-                                                    {(() => {
-                                                        function C({ v }) {
-                                                            let ref = useRef();
-                                                            useEffect(() => {
-                                                                if (!(typeof v == 'boolean')) ref.current.value = v;
-                                                                else ref.current.checked = v;
-                                                            }, []);
-                                                            switch (typeof v) {
-                                                                case 'boolean':
-                                                                    return (
-                                                                        <Switch
-                                                                            inputRef={ref}
-                                                                            defaultChecked={v}
-                                                                            onChange={e => {
-                                                                                m.configs[c] = e.currentTarget.checked;
-                                                                                m.saveConfigs();
-                                                                            }}
-                                                                        ></Switch>
-                                                                    );
-                                                                case 'string':
-                                                                    return (
-                                                                        <input
-                                                                            ref={ref}
-                                                                            onChange={e => {
-                                                                                m.configs[c] = e.currentTarget.value;
-                                                                                m.saveConfigs();
-                                                                            }}
-                                                                        ></input>
-                                                                    );
-                                                                case 'number':
-                                                                    return (
-                                                                        <input
-                                                                            ref={ref}
-                                                                            defaultValue={v}
-                                                                            type="number"
-                                                                            onChange={e => {
-                                                                                m.configs[c] = e.currentTarget.valueAsNumber;
-                                                                                m.saveConfigs();
-                                                                            }}
-                                                                        ></input>
-                                                                    );
-                                                            }
-                                                        }
-                                                        return <C v={v}></C>;
-                                                    })()}
-                                                </div>
-                                            </div>
-                                        );
-                                    }))()}
-                            </div>
-                        </div>
-                    );
-                })}
-            </>
-        );
-    });
 
     function SettingsContent() {
-        let [categoryContent, setCC] = useState(contents['破解']);
+        let [category, setCategory] = useState(categories.includes('破解') ? '破解' : categories[0]);
         return (
             <>
                 <div className="categories">
-                    {categories.map(v => {
-                        return (
-                            <button
-                                onClick={b => {
-                                    document.querySelectorAll('.etsh-settings .categories button.active').forEach(e => e.classList.remove('active'));
-                                    setCC(contents[v]);
-                                    document.querySelectorAll('.expand');
-                                    b.currentTarget.classList.add('active');
-                                }}
-                            >
-                                {v}
-                            </button>
-                        );
-                    })}
+                    {categories.map(name => (
+                        <button className={category == name ? 'active' : ''} onClick={() => setCategory(name)} key={name}>
+                            {name}
+                        </button>
+                    ))}
                 </div>
-                <div className="current-category">{categoryContent}</div>
+                <div className="current-category">
+                    {Object.values(modules[category] ?? {}).map(module => (
+                        <SettingsItem module={module} key={module.name}></SettingsItem>
+                    ))}
+                </div>
             </>
         );
     }
@@ -135,7 +125,7 @@ export function createDialog() {
                 <div
                     className="closebtn icon-close"
                     onClick={() => {
-                        d.close();
+                        dialog.close();
                     }}
                 ></div>
                 <div className="info">
@@ -151,17 +141,12 @@ export function createDialog() {
             </div>
         </>
     );
-    document.addEventListener('keydown', k => {
-        if (k.key == 'F1') {
-            d.showModal();
-        }
+    document.addEventListener('keydown', event => {
+        if (event.key == 'F1') dialog.showModal();
+    });
+    window.addEventListener('message', event => {
+        if (event.data == 'show-dialog') dialog.showModal();
     });
 
-    window.addEventListener('message', e => {
-        if (e.data == 'show-dialog') {
-            d.showModal();
-        }
-    });
-
-    return d;
+    return dialog;
 }

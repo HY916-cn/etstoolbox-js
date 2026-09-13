@@ -93,15 +93,34 @@
     background-color: rgb(84, 88, 97);
 }
 .settings-row label.lb {
-    width: 80%;
+    width: 70%;
 }
 .settings-row .item {
-    width: 18%;
+    width: 28%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 ._switch {
     position: absolute;
-    right: 20px;
+    right: 0;
+}
+
+.config-toggle {
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 4px;
+    background-color: transparent;
+    color: #fff;
+    cursor: pointer;
+    margin-right: 58px;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+
+.config-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.12);
 }
 
 input.switch ~ ._switch::before {
@@ -175,9 +194,11 @@ input.switch {
     width: 25%;
     height: 25px;
 }
-.settings-row-container input[type='text'] {
+.settings-row-container input[type='text'],
+.settings-row-container input[type='number'] {
     border: none;
     border-radius: 5px;
+    width: 100%;
 }
 
 .ets-overlay {
@@ -206,6 +227,10 @@ input.switch {
 }
 .etsh-overlay-window .children {
     flex-direction: column;
+    max-width: 520px;
+    max-height: 65vh;
+    overflow: auto;
+    padding: 8px 12px;
 }
 
 .etsh-overlay-window._minimized .children {
@@ -225,6 +250,25 @@ input.switch {
 }
 
 .cracked-answer {
-    height: 400px;
-    width: 600px;
+    margin: 0;
+    padding-left: 24px;
+}
+
+.cracked-answer li {
+    margin-bottom: 8px;
+}
+
+.cracked-answer strong,
+.cracked-answer span {
+    display: block;
+    white-space: pre-wrap;
+}
+
+.cracked-answer span {
+    margin-top: 2px;
+}
+
+.answer-empty {
+    color: #666;
+    margin: 0;
 }

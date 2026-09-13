@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { createElement } from './ui';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { events, settings } from '../modules';
 
@@ -10,7 +10,7 @@ function OverlayWindow(props) {
     let ref = useRef();
     return (
         <Draggable nodeRef={ref} handle=".title" allowAnyClick={false}>
-            <div className="etsh-overlay-window" ref={ref} style={{ display: props.display ?? 'flex' }}>
+            <div className="etsh-overlay-window" ref={ref} style={{ ...props.style, display: props.display ?? 'flex' }}>
                 <div
                     className="title"
                     onContextMenu={e => {
@@ -27,20 +27,51 @@ function OverlayWindow(props) {
 function Overlay() {
     let [showRSWindow, setSRSW] = useState(settings.modules.控分_cfg.显示真实分数);
     let [showAWindow, setSAW] = useState(settings.modules.显示答案);
-    events.on('settings-update', s => {
-        setSRSW(s.modules.控分_cfg.显示真实分数);
-        setSAW(s.modules.显示答案);
-    });
+    let [answers, setAnswers] = useState([]);
+    let [currentPath, setCurrentPath] = useState(location.pathname);
+
+    useEffect(() => {
+        const onSettingsUpdate = s => {
+            setSRSW(s.modules.控分_cfg.显示真实分数);
+            setSAW(s.modules.显示答案);
+        };
+        const onMessage = event => {
+            if (event.data?.source !== 'etstoolbox' || event.data?.type !== 'reference-answers') return;
+            setAnswers(Array.isArray(event.data.answers) ? event.data.answers : []);
+        };
+        const routeTimer = setInterval(() => {
+            setCurrentPath(path => (path === location.pathname ? path : location.pathname));
+        }, 250);
+        events.on('settings-update', onSettingsUpdate);
+        window.addEventListener('message', onMessage);
+        return () => {
+            clearInterval(routeTimer);
+            events.off('settings-update', onSettingsUpdate);
+            window.removeEventListener('message', onMessage);
+        };
+    }, []);
+
     return (
         <>
-            {/\/mockExamDetail/.test(location.href) ? (
+            {/\/mockExamDetail/.test(currentPath) ? (
                 <>
                     <OverlayWindow title="真实分数" display={showRSWindow ? 'flex' : 'none'}>
                         <h3>真实分数</h3>
                         <ul></ul>
                     </OverlayWindow>
-                    <OverlayWindow title="答案" display={showAWindow ? 'flex' : 'none'}>
-                        <div className="cracked-answer"></div>
+                    <OverlayWindow title="参考答案（右键标题可收起）" display={showAWindow ? 'flex' : 'none'} style={{ top: '24px', right: '24px' }}>
+                        {answers.length ? (
+                            <ol className="cracked-answer">
+                                {answers.map((answer, index) => (
+                                    <li key={`${answer.label}-${index}`}>
+                                        <strong>{answer.label}</strong>
+                                        <span>{answer.value}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        ) : (
+                            <p className="answer-empty">当前题目数据中没有可显示的参考答案</p>
+                        )}
                     </OverlayWindow>
                 </>
             ) : undefined}
