@@ -27,7 +27,7 @@ module.exports = {
     },
     plugins: [
         new DefinePlugin({
-            __VERSION: '\"1.0.3-internal.4\"'
+            __VERSION: '\"1.0.3\"'
         })
     ]
 };

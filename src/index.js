@@ -3,21 +3,22 @@ import constants from './constants';
 
 import { createDialog } from './ui/dialog';
 import './answerBridge';
-import './autoRecord';
+import './autoFlow';
 import { settings } from './modules';
 const { calculateAdjustedScores } = require('./score');
+const { isListeningSpeakingLocation } = require('./scope');
 
 function modifyUI() {
     let dialog = createDialog();
     if (/.*\/main\/.*/.test(location.href)) {
-        document.querySelector('#mainHeader > div.page-header-name').innerHTML += ('+ E听说外挂V' + __VERSION).fontcolor('darkblue');
+        document.querySelector('#mainHeader > div.page-header-name').innerHTML += (' + ETSToolbox V' + __VERSION).fontcolor('darkblue');
         let b = document.createElement('li');
         b.setAttribute('data-el-collection-item', '');
         b.classList.add('el-dropdown-menu__item');
         b.tabIndex = -1;
         b.role = 'menuitem';
         b.ariaDisabled = false;
-        b.innerHTML = 'E听说外挂';
+        b.innerHTML = 'ETSToolbox';
         b.addEventListener('click', e => {
             dialog.showModal();
         });
@@ -73,6 +74,7 @@ window.addEventListener('DOMContentLoaded', async () => {
              */
             apply(target, thisarg, argarr) {
                 let [args, _] = argarr;
+                if (!isListeningSpeakingLocation(window.location)) return target.apply(thisarg, argarr);
                 let o = args.body;
                 let decoded = JSON.parse(atob(args.body));
                 if (decoded[0].r == constants.SyncV2URL && settings.modules.控分) {

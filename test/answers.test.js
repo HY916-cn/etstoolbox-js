@@ -38,12 +38,28 @@ test('extracts ordered fill answers', () => {
     ]);
 });
 
-test('shows at most three oral reference samples', () => {
+test('shows every oral reference sample for the current question', () => {
     const result = extractReferenceAnswers({
         ask: 'How did he feel?',
         std: [{ value: 'Excited.' }, { value: 'He felt excited.' }, { value: 'So excited.' }, { value: 'Happy.' }]
     });
-    assert.deepEqual(result, [{ label: 'How did he feel?', value: 'Excited.\n或：He felt excited.\n或：So excited.' }]);
+    assert.deepEqual(result, [{ label: 'How did he feel?', value: 'Excited.\n或：He felt excited.\n或：So excited.\n或：Happy.' }]);
+});
+
+test('extracts every recognized answer field from nested and JSON-encoded questions', () => {
+    const input = {
+        sections: [
+            { order: 1, question_text: 'Question one', correctAnswer: 'A' },
+            { order: 2, question_text: 'Question two', right_answer: ['first', 'second'] },
+            '{"xh":3,"ask":"Question three","standardAnswer":{"value":"sample"}}'
+        ],
+        user_answer: 'must not be shown'
+    };
+    assert.deepEqual(extractReferenceAnswers(input), [
+        { label: '第 1 题 · Question one', value: 'A' },
+        { label: '第 2 题 · Question two', value: 'first\n或：second' },
+        { label: '第 3 题 · Question three', value: 'sample' }
+    ]);
 });
 
 test('cleans markup without interpreting it as HTML', () => {

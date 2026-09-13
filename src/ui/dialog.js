@@ -100,7 +100,7 @@ export function createDialog() {
     let categories = Object.keys(modules);
 
     function SettingsContent() {
-        let [category, setCategory] = useState(categories.includes('破解') ? '破解' : categories[0]);
+        let [category, setCategory] = useState(categories.includes('功能') ? '功能' : categories[0]);
         return (
             <>
                 <div className="categories">
@@ -131,7 +131,7 @@ export function createDialog() {
                 <div className="info">
                     <img src={window._etb_resserver + '/resources/logo.png'}></img>
                     <div className="version">
-                        <h3>E听说外挂</h3>
+                        <h3>ETSToolbox</h3>
                         <p>版本：{__VERSION}</p>
                     </div>
                 </div>

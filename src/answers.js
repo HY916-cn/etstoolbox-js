@@ -26,6 +26,19 @@ function parseData(value) {
 function extractReferenceAnswers(input) {
     const answers = [];
     const seen = new Set();
+    const answerKeys = new Set([
+        'answer',
+        'right_answer',
+        'rightAnswer',
+        'correct_answer',
+        'correctAnswer',
+        'reference_answer',
+        'referenceAnswer',
+        'answer_text',
+        'answerText',
+        'standard_answer',
+        'standardAnswer'
+    ]);
 
     function add(label, value) {
         const text = cleanText(value);
@@ -35,6 +48,33 @@ function extractReferenceAnswers(input) {
         if (seen.has(key)) return;
         seen.add(key);
         answers.push({ label: normalizedLabel, value: text });
+    }
+
+    function addAnswerValue(label, value) {
+        value = parseData(value);
+        if (value == null) return;
+        if (Array.isArray(value)) {
+            const primitiveValues = value.map(item => cleanText(item?.value ?? item?.ai ?? item?.text ?? item)).filter(Boolean);
+            if (primitiveValues.length === value.length) add(label, primitiveValues.join('\n或：'));
+            else value.forEach((item, index) => addAnswerValue(`${label} · ${index + 1}`, item));
+            return;
+        }
+        if (typeof value === 'object') {
+            const direct = value.value ?? value.ai ?? value.text ?? value.content;
+            if (direct != null) add(label, direct);
+            else Object.entries(value).forEach(([key, child]) => addAnswerValue(`${label} · ${key}`, child));
+            return;
+        }
+        add(label, value);
+    }
+
+    function answerLabel(value, context) {
+        const order = value.xt_xh ?? value.xth ?? value.xh ?? value.question_order ?? value.order;
+        const question = cleanText(value.xt_nr ?? value.ask ?? value.question_text ?? value.question ?? value.title);
+        if (question && order != null) return `第 ${order} 题 · ${question}`;
+        if (question) return question;
+        if (order != null) return `第 ${order} 题`;
+        return context || `答案 ${answers.length + 1}`;
     }
 
     function visit(value, context = '', handledByParent = false) {
@@ -67,25 +107,26 @@ function extractReferenceAnswers(input) {
             } else {
                 const samples = value.std
                     .map(item => cleanText(item?.value ?? item?.ai ?? item))
-                    .filter(Boolean)
-                    .slice(0, 3);
+                    .filter(Boolean);
                 if (samples.length) add(cleanText(value.ask) || context || '参考作答', samples.join('\n或：'));
             }
         }
 
-        if (!handledByParent && value.answer != null && !Array.isArray(value.answer)) {
-            add(context || (value.xh != null ? `第 ${value.xh} 题` : '参考答案'), value.answer);
+        if (!handledByParent) {
+            for (const key of answerKeys) {
+                if (value[key] != null) addAnswerValue(answerLabel(value, context), value[key]);
+            }
         }
 
         Object.entries(value).forEach(([key, child]) => {
-            if (key === 'xtlist' || key === 'std' || key === 'answer' || key === 'user_answer') return;
+            if (key === 'xtlist' || key === 'std' || answerKeys.has(key) || key === 'user_answer' || key === 'userAnswer') return;
             const childContext = value.ask ? cleanText(value.ask) : context;
             visit(child, childContext, handledByParent || key === 'xxlist');
         });
     }
 
     visit(input);
-    return answers.slice(0, 100);
+    return answers.slice(0, 500);
 }
 
 module.exports = { cleanText, extractReferenceAnswers };

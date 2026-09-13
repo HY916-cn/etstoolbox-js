@@ -19,6 +19,14 @@ delete settings.modules.控制时间;
 delete settings.modules.控制时间_cfg;
 delete settings.modules.修改用户名;
 delete settings.modules.修改用户名_cfg;
+if (settings.modules.自动录音 === undefined && settings.modules.自动流程 !== undefined) {
+    settings.modules.自动录音 = settings.modules.自动流程;
+}
+if (settings.modules.自动下一步 === undefined && settings.modules.自动流程 !== undefined) {
+    settings.modules.自动下一步 = settings.modules.自动流程;
+}
+delete settings.modules.自动流程;
+delete settings.modules.自动流程_cfg;
 
 function saveSettings() {
     writeConfig(settings);
@@ -63,7 +71,8 @@ export class EModule {
     }
 }
 
-new EModule('控分', '按百分比设置提交分数', '破解', { '得分百分比（0-100）': 100, 显示真实分数: true });
-new EModule('作业提交用时', '设置提交记录中的完成用时', '破解', { '时间（秒）': 0 });
-new EModule('显示答案', '将当前题目的参考答案输出到独立终端', '破解');
-new EModule('自动录音', '进入录音步骤后自动开始，并按题目时长自动结束', '破解');
+new EModule('控分', '按百分比设置提交分数', '功能', { '得分百分比（0-100）': 100, 显示真实分数: true });
+new EModule('作业提交用时', '设置提交记录中的完成用时', '功能', { '时间（秒）': 0 });
+new EModule('显示答案', '将当前题目的参考答案输出到独立终端', '功能');
+new EModule('自动录音', '进入录音步骤后自动开始，并在 2 秒后停止', '功能');
+new EModule('自动下一步', '手动开始练习后，自动点击可用的下一步按钮', '功能');
