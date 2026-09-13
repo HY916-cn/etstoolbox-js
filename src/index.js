@@ -3,6 +3,7 @@ import constants from './constants';
 
 import { createDialog } from './ui/dialog';
 import './answerBridge';
+import './autoRecord';
 import { settings } from './modules';
 const { calculateAdjustedScores } = require('./score');
 
@@ -21,9 +22,6 @@ function modifyUI() {
             dialog.showModal();
         });
         document.querySelector('.el-dropdown-menu').append(b);
-        if (settings.modules.修改用户名) {
-            document.querySelector('#appView > section > aside > div > div.el-dropdown-link.side-menu-name.el-tooltip__trigger.el-tooltip__trigger').innerHTML = settings.modules.修改用户名_cfg.名字;
-        }
     }
 }
 

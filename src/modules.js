@@ -17,6 +17,8 @@ if (settings.modules.作业提交用时_cfg === undefined && settings.modules.�
 }
 delete settings.modules.控制时间;
 delete settings.modules.控制时间_cfg;
+delete settings.modules.修改用户名;
+delete settings.modules.修改用户名_cfg;
 
 function saveSettings() {
     writeConfig(settings);
@@ -64,4 +66,4 @@ export class EModule {
 new EModule('控分', '按百分比设置提交分数', '破解', { '得分百分比（0-100）': 100, 显示真实分数: true });
 new EModule('作业提交用时', '设置提交记录中的完成用时', '破解', { '时间（秒）': 0 });
 new EModule('显示答案', '将当前题目的参考答案输出到独立终端', '破解');
-new EModule('修改用户名', '将你的用户名修改成你想要的（注意：这只在客户端生效）', '娱乐', { 名字: '不告诉你' });
+new EModule('自动录音', '进入录音步骤后自动开始，并按题目时长自动结束', '破解');
