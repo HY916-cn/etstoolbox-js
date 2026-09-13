@@ -30,7 +30,7 @@ function ConfigInput({ module, configName }) {
                 ></input>
             );
         case 'number': {
-            let isPercentage = configName == '得分百分比（0-100）';
+            let isPercentage = ['得分百分比（0-100）', '随机偏移上限（百分点）'].includes(configName);
             return (
                 <input
                     defaultValue={value}

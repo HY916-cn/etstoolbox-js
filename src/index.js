@@ -79,9 +79,15 @@ window.addEventListener('DOMContentLoaded', async () => {
                 let decoded = JSON.parse(atob(args.body));
                 if (decoded[0].r == constants.SyncV2URL && settings.modules.控分) {
                     let detail = JSON.parse(decoded[0].params.score_detail);
-                    let scores = calculateAdjustedScores(decoded[0].params.question_type_score, settings.modules.控分_cfg['得分百分比（0-100）'], decoded[0].params.graduation);
+                    let basePercentage = settings.modules.控分_cfg['得分百分比（0-100）'];
+                    let scores = calculateAdjustedScores(
+                        decoded[0].params.question_type_score,
+                        basePercentage,
+                        decoded[0].params.graduation,
+                        settings.modules.控分_cfg['随机偏移上限（百分点）']
+                    );
                     if (scores) {
-                        console.log('控分：', decoded[0].params.real_score, '->', scores.questionScore, `(${scores.percentage}%)`);
+                        console.log('控分：', decoded[0].params.real_score, '->', scores.questionScore, `(基准 ${basePercentage}%，本题 ${scores.percentage}%)`);
                         detail.total_score = 5;
                         detail.real_score = scores.questionScore;
                         decoded[0].params.score_detail = JSON.stringify(detail);
