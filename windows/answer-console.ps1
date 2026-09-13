@@ -1,27 +1,45 @@
 [CmdletBinding()]
 param(
-    [string]$AnswerFile = (Join-Path $PSScriptRoot 'answers.txt')
+    [string]$AnswerFile,
+    [switch]$Once
 )
 
-$ErrorActionPreference = 'SilentlyContinue'
-[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-$Host.UI.RawUI.WindowTitle = 'ETSToolbox Answer Console'
-$lastText = $null
+$ErrorActionPreference = 'Stop'
 
-while ($true) {
-    if (Test-Path -LiteralPath $AnswerFile -PathType Leaf) {
-        $text = Get-Content -LiteralPath $AnswerFile -Raw -Encoding UTF8
+if ([string]::IsNullOrWhiteSpace($AnswerFile)) {
+    $scriptPath = $MyInvocation.MyCommand.Path
+    if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+        throw 'The answer console script path could not be resolved.'
     }
-    else {
-        $text = "ETSToolbox Answer Console`r`n`r`nWaiting for question data..."
-    }
+    $AnswerFile = Join-Path (Split-Path -Parent $scriptPath) 'answers.txt'
+}
 
-    if ($text -ne $lastText) {
-        Clear-Host
-        Write-Host $text
-        Write-Host "`r`nPress Ctrl+C to close this window." -ForegroundColor DarkGray
-        $lastText = $text
-    }
+try {
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $Host.UI.RawUI.WindowTitle = 'ETSToolbox Answer Console'
+    $lastText = $null
 
-    Start-Sleep -Milliseconds 250
+    while ($true) {
+        if (Test-Path -LiteralPath $AnswerFile -PathType Leaf) {
+            $text = Get-Content -LiteralPath $AnswerFile -Raw -Encoding UTF8
+        }
+        else {
+            $text = "ETSToolbox Answer Console`r`n`r`nWaiting for question data..."
+        }
+
+        if ($text -ne $lastText) {
+            Clear-Host
+            Write-Host $text
+            Write-Host "`r`nPress Ctrl+C to close this window." -ForegroundColor DarkGray
+            $lastText = $text
+        }
+
+        if ($Once) { break }
+        Start-Sleep -Milliseconds 250
+    }
+}
+catch {
+    Write-Host "ETSToolbox answer console failed: $($_.Exception.Message)" -ForegroundColor Red
+    Read-Host 'Press Enter to close'
+    exit 1
 }
