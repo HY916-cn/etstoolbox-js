@@ -1,5 +1,6 @@
 const LISTENING_SPEAKING_ROUTES = [
     '/mockExamDetail',
+    '/modelTestMode',
     '/listeningSpeakingSynchronousDetail',
     '/listeningSpeakingSynchronousComprehensive',
     '/speakListenLesson',

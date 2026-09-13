@@ -25,14 +25,12 @@ function OverlayWindow(props) {
     );
 }
 function Overlay() {
-    let [showRSWindow, setSRSW] = useState(settings.modules.控分_cfg.显示真实分数);
     let [showAWindow, setSAW] = useState(settings.modules.显示答案);
     let [answers, setAnswers] = useState([]);
     let [currentPath, setCurrentPath] = useState(location.pathname);
 
     useEffect(() => {
         const onSettingsUpdate = s => {
-            setSRSW(s.modules.控分_cfg.显示真实分数);
             setSAW(s.modules.显示答案);
         };
         const onMessage = event => {
@@ -55,26 +53,20 @@ function Overlay() {
     return (
         <>
             {/\/mockExamDetail/.test(currentPath) ? (
-                <>
-                    <OverlayWindow title="真实分数" display={showRSWindow ? 'flex' : 'none'}>
-                        <h3>真实分数</h3>
-                        <ul></ul>
-                    </OverlayWindow>
-                    <OverlayWindow title="参考答案（右键标题可收起）" display={showAWindow ? 'flex' : 'none'} style={{ top: '24px', right: '24px' }}>
-                        {answers.length ? (
-                            <ol className="cracked-answer">
-                                {answers.map((answer, index) => (
-                                    <li key={`${answer.label}-${index}`}>
-                                        <strong>{answer.label}</strong>
-                                        <span>{answer.value}</span>
-                                    </li>
-                                ))}
-                            </ol>
-                        ) : (
-                            <p className="answer-empty">当前题目数据中没有可显示的参考答案</p>
-                        )}
-                    </OverlayWindow>
-                </>
+                <OverlayWindow title="参考答案（右键标题可收起）" display={showAWindow ? 'flex' : 'none'} style={{ top: '24px', right: '24px' }}>
+                    {answers.length ? (
+                        <ol className="cracked-answer">
+                            {answers.map((answer, index) => (
+                                <li key={`${answer.label}-${index}`}>
+                                    <strong>{answer.label}</strong>
+                                    <span>{answer.value}</span>
+                                </li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p className="answer-empty">当前题目数据中没有可显示的参考答案</p>
+                    )}
+                </OverlayWindow>
             ) : undefined}
         </>
     );

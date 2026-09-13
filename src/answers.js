@@ -105,10 +105,21 @@ function extractReferenceAnswers(input) {
             if (ordered) {
                 value.std.forEach((item, index) => add(`第 ${item?.xth ?? item?.xh ?? index + 1} 题`, item?.value ?? item?.ai));
             } else {
-                const samples = value.std
-                    .map(item => cleanText(item?.value ?? item?.ai ?? item))
-                    .filter(Boolean);
+                const samples = value.std.map(item => cleanText(item?.value ?? item?.ai ?? item)).filter(Boolean);
                 if (samples.length) add(cleanText(value.ask) || context || '参考作答', samples.join('\n或：'));
+            }
+        }
+
+        const structureType = cleanText(value.structure_type);
+        const structureInfo = parseData(value.info);
+        if (structureInfo && typeof structureInfo === 'object' && !Array.isArray(structureInfo)) {
+            if (structureType === 'collector.read') {
+                add('模仿朗读参考文本', structureInfo.ai ?? structureInfo.value);
+            } else if (structureType === 'collector.repeat') {
+                add('跟读参考文本', structureInfo.ai ?? structureInfo.value);
+            } else if (structureType === 'collector.word') {
+                const sentence = cleanText(structureInfo.value_pf ?? structureInfo.value_bz ?? structureInfo.value).replace(/^ets_th\d+\s*/i, '');
+                add('朗读句子参考文本', sentence);
             }
         }
 

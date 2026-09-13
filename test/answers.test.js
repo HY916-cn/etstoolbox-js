@@ -62,6 +62,19 @@ test('extracts every recognized answer field from nested and JSON-encoded questi
     ]);
 });
 
+test('extracts reference text for listening-speaking reading and repeat structures', () => {
+    const result = extractReferenceAnswers([
+        { structure_type: 'collector.read', info: { ai: '<p>Read this passage.</p>' } },
+        { structure_type: 'collector.repeat', info: { ai: 'Repeat this sentence.' } },
+        { structure_type: 'collector.word', info: { value_pf: 'ets_th1 Read this sentence aloud.' } }
+    ]);
+    assert.deepEqual(result, [
+        { label: '模仿朗读参考文本', value: 'Read this passage.' },
+        { label: '跟读参考文本', value: 'Repeat this sentence.' },
+        { label: '朗读句子参考文本', value: 'Read this sentence aloud.' }
+    ]);
+});
+
 test('cleans markup without interpreting it as HTML', () => {
     assert.equal(cleanText('</p><p>A &amp; B<br>C'), 'A & B\nC');
 });
