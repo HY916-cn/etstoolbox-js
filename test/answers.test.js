@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cleanText, extractReferenceAnswers } = require('../src/answers');
+const { cleanText, extractAnswerLookupTerms, extractReferenceAnswers } = require('../src/answers');
 
 test('extracts choice answers and their option text', () => {
     const result = extractReferenceAnswers([
@@ -77,4 +77,15 @@ test('extracts reference text for listening-speaking reading and repeat structur
 
 test('cleans markup without interpreting it as HTML', () => {
     assert.equal(cleanText('</p><p>A &amp; B<br>C'), 'A & B\nC');
+});
+
+test('extracts stable question text for matching the local exercise cache', () => {
+    const result = extractAnswerLookupTerms({
+        title: '二、信息获取(共10分)',
+        hint: '听第二段对话，回答第3-4两个问题。现在你有10秒的阅题时间。',
+        content: "3. What did Carver want to be at first?<br>(An artist. / A farmer. / An agricultural scientist.)</br>4. Why did Carver change his mind?<br>(He loved nature. / He discovered his real talent. / He wanted to improve farmers' lives.)"
+    });
+    assert.ok(result.includes('What did Carver want to be at first?'));
+    assert.ok(result.includes('Why did Carver change his mind?'));
+    assert.ok(!result.some(term => term.startsWith('二、信息获取')));
 });

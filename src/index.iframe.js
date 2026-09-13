@@ -1,4 +1,4 @@
-const { extractReferenceAnswers } = require('./answers');
+const { extractAnswerLookupTerms, extractReferenceAnswers } = require('./answers');
 
 const MESSAGE_SOURCE = 'etstoolbox';
 const CAPTURE_INTERVAL_MS = 100;
@@ -6,7 +6,8 @@ let lastPublishedSignature;
 
 function publishAnswers(data, target = parent) {
     const answers = extractReferenceAnswers(data);
-    const signature = JSON.stringify(answers);
+    const lookupTerms = extractAnswerLookupTerms(data);
+    const signature = JSON.stringify({ answers, lookupTerms });
     if (signature === lastPublishedSignature) return;
     lastPublishedSignature = signature;
     console.info(`[ETSToolbox 答案] 已捕获当前题目数据，参考内容 ${answers.length} 项`);
@@ -14,7 +15,8 @@ function publishAnswers(data, target = parent) {
         {
             source: MESSAGE_SOURCE,
             type: 'reference-answers',
-            answers
+            answers,
+            lookupTerms
         },
         '*'
     );

@@ -1,6 +1,6 @@
 function cleanText(value) {
     return String(value ?? '')
-        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/?br\s*\/?>/gi, '\n')
         .replace(/<\/p>\s*<p>/gi, '\n')
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/gi, ' ')
@@ -21,6 +21,50 @@ function parseData(value) {
     } catch (error) {
         return value;
     }
+}
+
+function extractAnswerLookupTerms(input) {
+    const terms = [];
+    const seen = new Set();
+    const preferredKeys = new Set(['ask', 'content', 'question', 'question_text', 'questionText', 'xt_nr', 'hint']);
+
+    function addTerm(value) {
+        const text = cleanText(value);
+        if (!text) return;
+
+        text.split(/\n+/).forEach(line => {
+            const normalized = line
+                .replace(/^\s*ets_th\d+\s*/i, '')
+                .replace(/^\s*\d+\s*[.)、．]\s*/, '')
+                .trim();
+            const withoutChoices = normalized.replace(/\s*[（(][^()（）]{0,500}[)）]\s*$/, '').trim();
+
+            [withoutChoices, normalized].forEach(candidate => {
+                const compactLength = candidate.replace(/\s/g, '').length;
+                if (compactLength < 6 || candidate.length > 512 || seen.has(candidate)) return;
+                seen.add(candidate);
+                terms.push(candidate);
+            });
+        });
+    }
+
+    function visit(value, key = '') {
+        value = parseData(value);
+        if (value == null) return;
+        if (typeof value === 'string') {
+            if (preferredKeys.has(key)) addTerm(value);
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach(item => visit(item, key));
+            return;
+        }
+        if (typeof value !== 'object') return;
+        Object.entries(value).forEach(([childKey, child]) => visit(child, childKey));
+    }
+
+    visit(input);
+    return terms.slice(0, 32);
 }
 
 function extractReferenceAnswers(input) {
@@ -106,7 +150,8 @@ function extractReferenceAnswers(input) {
                 value.std.forEach((item, index) => add(`第 ${item?.xth ?? item?.xh ?? index + 1} 题`, item?.value ?? item?.ai));
             } else {
                 const samples = value.std.map(item => cleanText(item?.value ?? item?.ai ?? item)).filter(Boolean);
-                if (samples.length) add(cleanText(value.ask) || context || '参考作答', samples.join('\n或：'));
+                const question = cleanText(value.ask).replace(/^ets_th\d+\s*/i, '');
+                if (samples.length) add(question || context || '参考作答', samples.join('\n或：'));
             }
         }
 
@@ -140,4 +185,4 @@ function extractReferenceAnswers(input) {
     return answers.slice(0, 500);
 }
 
-module.exports = { cleanText, extractReferenceAnswers };
+module.exports = { cleanText, extractAnswerLookupTerms, extractReferenceAnswers };

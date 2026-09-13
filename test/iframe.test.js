@@ -55,7 +55,8 @@ test('iframe setData hook publishes the current reference answers', () => {
         {
             source: 'etstoolbox',
             type: 'reference-answers',
-            answers: [{ label: '第 1 题', value: 'C' }]
+            answers: [{ label: '第 1 题', value: 'C' }],
+            lookupTerms: []
         }
     ]);
     harness.cleanup();
@@ -82,7 +83,8 @@ test('recovers question data when a late global declaration replaces the hook', 
         {
             source: 'etstoolbox',
             type: 'reference-answers',
-            answers: [{ label: '第 1 题', value: 'Asia' }]
+            answers: [{ label: '第 1 题', value: 'Asia' }],
+            lookupTerms: []
         }
     ]);
     assert.equal(window.setData.__etstoolboxWrapped, true);
@@ -100,7 +102,8 @@ test('publishes an empty capture once instead of leaving the console waiting for
         {
             source: 'etstoolbox',
             type: 'reference-answers',
-            answers: []
+            answers: [],
+            lookupTerms: []
         }
     ]);
     harness.cleanup();
