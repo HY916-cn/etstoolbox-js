@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import './style';
 import { modules } from '../modules';
 import Switch from './components/switch';
+const { openAnswerConsole } = require('../openAnswerConsole');
 
 function ConfigInput({ module, configName }) {
     let value = module.configs[configName];
@@ -56,7 +57,20 @@ function ConfigInput({ module, configName }) {
 
 function SettingsItem({ module }) {
     let [expanded, setExpanded] = useState(false);
+    let [enabled, setEnabled] = useState(module.enabled);
+    let [openingAnswerConsole, setOpeningAnswerConsole] = useState(false);
     let configNames = Object.keys(module.configs);
+    let isAnswerModule = module.name === '显示答案';
+
+    function handleOpenAnswerConsole() {
+        setOpeningAnswerConsole(true);
+        openAnswerConsole()
+            .catch(error => {
+                console.error(error);
+                window.alert(error.message);
+            })
+            .finally(() => setOpeningAnswerConsole(false));
+    }
 
     return (
         <div className={`settings-row-container${expanded ? ' expand' : ''}`}>
@@ -67,6 +81,11 @@ function SettingsItem({ module }) {
                     <span className="desc">{module.description}</span>
                 </label>
                 <div className="item">
+                    {isAnswerModule && enabled ? (
+                        <button className="config-toggle" type="button" disabled={openingAnswerConsole} onClick={handleOpenAnswerConsole}>
+                            {openingAnswerConsole ? '正在打开' : '打开答案终端'}
+                        </button>
+                    ) : undefined}
                     {configNames.length > 0 ? (
                         <button className="config-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
                             {expanded ? '收起设置' : '展开设置'}
@@ -75,7 +94,9 @@ function SettingsItem({ module }) {
                     <Switch
                         defaultChecked={module.enabled}
                         onChange={event => {
-                            module.enabled = event.currentTarget.checked;
+                            const nextEnabled = event.currentTarget.checked;
+                            setEnabled(nextEnabled);
+                            module.enabled = nextEnabled;
                         }}
                     ></Switch>
                 </div>

@@ -123,6 +123,11 @@
     background-color: rgba(255, 255, 255, 0.12);
 }
 
+.config-toggle:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 input.switch ~ ._switch::before {
     content: '';
     background-color: #ccc;
