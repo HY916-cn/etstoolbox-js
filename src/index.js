@@ -5,8 +5,34 @@ import { createDialog } from './ui/dialog';
 import './answerBridge';
 import './autoFlow';
 import { settings } from './modules';
-const { calculateAdjustedScores } = require('./score');
+const { getControlSettings, installReadingSettingsProvider } = require('./readingResult');
+const {
+    applyReadingScorePayload,
+    createReadingScoreProfile,
+    installReadingXmlWriteHook,
+    scoreProfileKey
+} = require('./readingScoreDetail');
 const { isListeningSpeakingLocation } = require('./scope');
+
+installReadingSettingsProvider(window, () => settings);
+const readingScoreProfiles = new Map();
+
+function getReadingControlSettings() {
+    if (!isListeningSpeakingLocation(window.location)) return null;
+    return getControlSettings(settings);
+}
+
+installReadingXmlWriteHook(window, getReadingControlSettings, entry => {
+    if (entry.key) readingScoreProfiles.set(entry.key, entry.profile);
+    const bands = (entry.wordBands || []).reduce((counts, band) => {
+        counts[band] += 1;
+        return counts;
+    }, { green: 0, orange: 0, red: 0 });
+    console.info(
+        `[ETSToolbox 控分] 已改写评测 XML：朗读指标 3 项，逐词得分 ${entry.wordCount} 项，` +
+            `绿/橙/红 ${bands.green}/${bands.orange}/${bands.red}`
+    );
+});
 
 function modifyUI() {
     let dialog = createDialog();
@@ -71,37 +97,46 @@ window.addEventListener('DOMContentLoaded', async () => {
              * @param {Function} target
              * @param {*} thisarg
              * @param {*} argarr
-             */
+            */
             apply(target, thisarg, argarr) {
-                let [args, _] = argarr;
+                const [args] = argarr;
                 if (!isListeningSpeakingLocation(window.location)) return target.apply(thisarg, argarr);
-                let o = args.body;
-                let decoded = JSON.parse(atob(args.body));
-                if (decoded[0].r == constants.SyncV2URL && settings.modules.控分) {
-                    let detail = JSON.parse(decoded[0].params.score_detail);
-                    let basePercentage = settings.modules.控分_cfg['得分百分比（0-100）'];
-                    let scores = calculateAdjustedScores(
-                        decoded[0].params.question_type_score,
-                        basePercentage,
-                        decoded[0].params.graduation,
-                        settings.modules.控分_cfg['随机偏移上限（百分点）']
-                    );
-                    if (scores) {
-                        console.log('控分：', decoded[0].params.real_score, '->', scores.questionScore, `(基准 ${basePercentage}%，本题 ${scores.percentage}%)`);
-                        detail.total_score = 5;
-                        detail.real_score = scores.questionScore;
-                        decoded[0].params.score_detail = JSON.stringify(detail);
-                        decoded[0].params.real_score = scores.questionScore;
-                        decoded[0].params.score = scores.normalizedScore;
-                        record[args.time] = encode(JSON.stringify(decoded));
+                const decoded = JSON.parse(atob(args.body));
+                const requests = Array.isArray(decoded) ? decoded : [decoded];
+                let modified = false;
+                for (const request of requests) {
+                    if (request.r == constants.SyncV2URL && settings.modules.控分) {
+                        const params = request.params;
+                        const basePercentage = settings.modules.控分_cfg['得分百分比（0-100）'];
+                        const maxOffset = settings.modules.控分_cfg['随机偏移上限（百分点）'];
+                        const profileKey = scoreProfileKey(params.detail_file_url);
+                        const linkedProfile = profileKey ? readingScoreProfiles.get(profileKey) : null;
+                        const profile = linkedProfile || createReadingScoreProfile(basePercentage, maxOffset);
+                        const result = applyReadingScorePayload(params, profile);
+                        if (result) {
+                            console.info('[ETSToolbox 控分] /m/audio/sync-v2 提交摘要：', {
+                                score: params.score,
+                                real_score: params.real_score,
+                                question_type_score: params.question_type_score,
+                                total_score: result.detail.total_score,
+                                accuracy_score: result.detail.accuracy_score,
+                                fluency_score: result.detail.fluency_score,
+                                integrity_score: result.detail.integrity_score,
+                                percentage: result.scores.percentage,
+                                xml_linked: Boolean(linkedProfile)
+                            });
+                            if (profileKey) readingScoreProfiles.delete(profileKey);
+                            modified = true;
+                        }
+                    }
+                    if (request.r == constants.SetUseTimeURL && settings.modules.作业提交用时) {
+                        request.params.use_time = settings.modules.作业提交用时_cfg['时间（秒）'];
+                        modified = true;
                     }
                 }
-                if (decoded[0].r == constants.SetUseTimeURL && settings.modules.作业提交用时) {
-                    decoded[0].params.use_time = settings.modules.作业提交用时_cfg['时间（秒）'];
-                    record[args.time] = encode(JSON.stringify(decoded));
-                }
+                if (modified) record[args.time] = encode(JSON.stringify(decoded));
                 //#region 编码
-                let encoded = encode(JSON.stringify(decoded));
+                const encoded = encode(JSON.stringify(decoded));
                 argarr[0].body = encoded;
                 return target.apply(thisarg, argarr);
                 //#endregion 编码

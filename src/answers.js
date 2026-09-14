@@ -26,7 +26,18 @@ function parseData(value) {
 function extractAnswerLookupTerms(input) {
     const terms = [];
     const seen = new Set();
-    const preferredKeys = new Set(['ask', 'content', 'question', 'question_text', 'questionText', 'xt_nr', 'hint']);
+    const preferredKeys = new Set([
+        'ask',
+        'content',
+        'question',
+        'question_content',
+        'question_text',
+        'questionText',
+        'sentence',
+        'stem',
+        'xt_nr',
+        'hint'
+    ]);
 
     function addTerm(value) {
         const text = cleanText(value);
@@ -80,8 +91,15 @@ function extractReferenceAnswers(input) {
         'referenceAnswer',
         'answer_text',
         'answerText',
+        'answers',
+        'model_answer',
+        'modelAnswer',
+        'pranswer',
+        'reference',
         'standard_answer',
-        'standardAnswer'
+        'standardAnswer',
+        'std_answer',
+        'stdAnswer'
     ]);
 
     function add(label, value) {
@@ -112,21 +130,47 @@ function extractReferenceAnswers(input) {
         add(label, value);
     }
 
-    function answerLabel(value, context) {
-        const order = value.xt_xh ?? value.xth ?? value.xh ?? value.question_order ?? value.order;
-        const question = cleanText(value.xt_nr ?? value.ask ?? value.question_text ?? value.question ?? value.title);
+    function answerLabel(value, context, orderIsZeroBased = false) {
+        const explicitOrder = value.xt_xh ?? value.xth ?? value.xh ?? value.question_order;
+        const order =
+            explicitOrder ??
+            (value.order != null && orderIsZeroBased && Number.isFinite(Number(value.order)) ? Number(value.order) + 1 : value.order);
+        const question = cleanText(
+            value.xt_nr ??
+                value.ask ??
+                value.question_text ??
+                value.questionText ??
+                value.question_content ??
+                value.question ??
+                value.stem ??
+                value.content ??
+                value.title
+        );
         if (question && order != null) return `第 ${order} 题 · ${question}`;
         if (question) return question;
         if (order != null) return `第 ${order} 题`;
         return context || `答案 ${answers.length + 1}`;
     }
 
-    function visit(value, context = '', handledByParent = false) {
+    function optionAnswer(value, answer) {
+        if (typeof answer !== 'string' && typeof answer !== 'number') return answer;
+        const answerText = cleanText(answer);
+        const options = value.xxlist ?? value.choose ?? value.options ?? value.choices ?? value.option_list ?? value.optionList;
+        if (!Array.isArray(options)) return answer;
+        const option = options.find(item => {
+            const key = item?.xx_mc ?? item?.option ?? item?.key ?? item?.label ?? item?.id;
+            return cleanText(key) === answerText;
+        });
+        const text = cleanText(option?.xx_nr ?? option?.value ?? option?.text ?? option?.content ?? option?.name);
+        return text && text !== answerText ? `${answerText}：${text}` : answer;
+    }
+
+    function visit(value, context = '', handledByParent = false, orderIsZeroBased = false) {
         value = parseData(value);
         if (!value || typeof value !== 'object') return;
 
         if (Array.isArray(value)) {
-            value.forEach(item => visit(item, context, handledByParent));
+            value.forEach(item => visit(item, context, handledByParent, orderIsZeroBased));
             return;
         }
 
@@ -170,14 +214,14 @@ function extractReferenceAnswers(input) {
 
         if (!handledByParent) {
             for (const key of answerKeys) {
-                if (value[key] != null) addAnswerValue(answerLabel(value, context), value[key]);
+                if (value[key] != null) addAnswerValue(answerLabel(value, context, orderIsZeroBased), optionAnswer(value, value[key]));
             }
         }
 
         Object.entries(value).forEach(([key, child]) => {
             if (key === 'xtlist' || key === 'std' || answerKeys.has(key) || key === 'user_answer' || key === 'userAnswer') return;
             const childContext = value.ask ? cleanText(value.ask) : context;
-            visit(child, childContext, handledByParent || key === 'xxlist');
+            visit(child, childContext, handledByParent || key === 'xxlist', key === 'info');
         });
     }
 

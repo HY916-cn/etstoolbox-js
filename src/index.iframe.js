@@ -1,4 +1,5 @@
 const { extractAnswerLookupTerms, extractReferenceAnswers } = require('./answers');
+const { startReadingResultControl } = require('./readingResult');
 
 const MESSAGE_SOURCE = 'etstoolbox';
 const CAPTURE_INTERVAL_MS = 100;
@@ -60,6 +61,7 @@ function startAnswerCapture(win = window, target = parent) {
 }
 
 startAnswerCapture();
+startReadingResultControl();
 
 document.addEventListener('keydown', event => {
     if (event.key === 'F1') parent.postMessage('show-dialog', '*');

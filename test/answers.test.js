@@ -89,3 +89,47 @@ test('extracts stable question text for matching the local exercise cache', () =
     assert.ok(result.includes('Why did Carver change his mind?'));
     assert.ok(!result.some(term => term.startsWith('二、信息获取')));
 });
+
+test('extracts reading-writing choice, cloze, and fill answers with option text', () => {
+    const result = extractReferenceAnswers({
+        question: [
+            {
+                type: 4,
+                info: [
+                    {
+                        order: 0,
+                        content: 'Where does Betty come from?',
+                        choose: [
+                            { option: 'A', value: 'Germany.' },
+                            { option: 'B', value: 'France.' }
+                        ],
+                        answer: 'A',
+                        user_answer: [{ value: 'B' }]
+                    }
+                ]
+            },
+            { type: 2, info: [{ order: 1, content: 'Complete the sentence.', answer: 'working' }] }
+        ]
+    });
+    assert.deepEqual(result, [
+        { label: '第 1 题 · Where does Betty come from?', value: 'A：Germany.' },
+        { label: '第 2 题 · Complete the sentence.', value: 'working' }
+    ]);
+});
+
+test('extracts additional model and reference answer fields', () => {
+    assert.deepEqual(
+        extractReferenceAnswers({
+            sections: [
+                { questionText: 'Writing', modelAnswer: 'Model paragraph.' },
+                { stem: 'Translation', std_answer: 'Standard translation.' },
+                { question_content: 'Practice', pranswer: 'Practice answer.' }
+            ]
+        }),
+        [
+            { label: 'Writing', value: 'Model paragraph.' },
+            { label: 'Translation', value: 'Standard translation.' },
+            { label: 'Practice', value: 'Practice answer.' }
+        ]
+    );
+});

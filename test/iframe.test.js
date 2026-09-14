@@ -108,3 +108,33 @@ test('publishes an empty capture once instead of leaving the console waiting for
     ]);
     harness.cleanup();
 });
+
+test('publishes answers from reading-writing practice data', () => {
+    const harness = loadIframeModule();
+
+    window.setData = data => {
+        window.showData = data;
+    };
+    harness.poll();
+    window.setData({
+        question: [
+            {
+                type: 4,
+                info: [
+                    {
+                        order: 0,
+                        content: 'Choose the correct word.',
+                        choose: [
+                            { option: 'A', value: 'first' },
+                            { option: 'B', value: 'second' }
+                        ],
+                        answer: 'B'
+                    }
+                ]
+            }
+        ]
+    });
+
+    assert.deepEqual(harness.messages[0].answers, [{ label: '第 1 题 · Choose the correct word.', value: 'B：second' }]);
+    harness.cleanup();
+});

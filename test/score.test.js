@@ -1,6 +1,15 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateAdjustedScores, normalizeMaxOffset, normalizePercentage, randomizePercentage } = require('../src/score');
+const {
+    applyReadingDimensions,
+    calculateAdjustedScores,
+    calculateReadingDimensions,
+    calculateWordScore,
+    normalizeMaxOffset,
+    normalizePercentage,
+    randomizeDistinctPercentages,
+    randomizePercentage
+} = require('../src/score');
 
 test('normalizes percentages to zero through one hundred with two decimal places', () => {
     assert.equal(normalizePercentage(-1), 0);
@@ -32,6 +41,62 @@ test('rerolls an out-of-range percentage until it is legal', () => {
     });
     assert.equal(percentage, 85);
     assert.equal(calls, 2);
+});
+
+test('creates different legal random values for the three reading dimensions', () => {
+    const values = [0, 0, 0, 0, 0, 0];
+    const dimensions = calculateReadingDimensions(91, 5, () => values.shift() ?? 0);
+    assert.deepEqual(dimensions, { accuracy: 86, fluency: 87, integrity: 88 });
+    assert.equal(new Set(Object.values(dimensions)).size, 3);
+});
+
+test('uses the base value for every reading dimension when random offset is disabled', () => {
+    assert.deepEqual(randomizeDistinctPercentages(88, 0, 3), [88, 88, 88]);
+});
+
+test('uses the configured percentage as each word green probability', () => {
+    const greenValues = [0.89, 0.25];
+    assert.deepEqual(calculateWordScore(90, 0, () => greenValues.shift()), {
+        greenProbability: 90,
+        band: 'green',
+        score: 85
+    });
+
+    const orangeValues = [0.91, 0.1, 0.5];
+    assert.deepEqual(calculateWordScore(90, 0, () => orangeValues.shift()), {
+        greenProbability: 90,
+        band: 'orange',
+        score: 70
+    });
+
+    const redValues = [0.91, 0.9, 0.5];
+    assert.deepEqual(calculateWordScore(90, 0, () => redValues.shift()), {
+        greenProbability: 90,
+        band: 'red',
+        score: 30
+    });
+});
+
+test('writes reading dimensions in the client zero-through-five format', () => {
+    const detail = { total_score: 2 };
+    assert.deepEqual(applyReadingDimensions(detail, 90, 5, () => 0), {
+        accuracy: 85,
+        fluency: 86,
+        integrity: 87
+    });
+    assert.deepEqual(detail, {
+        total_score: 2,
+        accuracy_score: 4.25,
+        fluency_score: 4.3,
+        integrity_score: 4.35,
+        dimension_result: [85, 86, 87]
+    });
+});
+
+test('does not treat arrays as reading score detail objects', () => {
+    const detail = [];
+    assert.equal(applyReadingDimensions(detail, 90, 5), null);
+    assert.deepEqual(detail, []);
 });
 
 test('calculates question and five-point scores with two decimal places', () => {
