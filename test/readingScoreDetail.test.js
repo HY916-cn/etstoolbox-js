@@ -92,6 +92,26 @@ test('writes a consistent sync-v2 score payload', () => {
     });
 });
 
+test('writes top-level sync-v2 scores when score detail is unavailable', () => {
+    for (const scoreDetail of [undefined, 'not-json', []]) {
+        const params = {
+            question_type_score: 6,
+            real_score: 0,
+            score: 0,
+            score_detail: scoreDetail
+        };
+        const result = applyReadingScorePayload(params, {
+            percentage: 90,
+            dimensions: { accuracy: 87, fluency: 91, integrity: 94 }
+        });
+
+        assert.equal(result.detail, null);
+        assert.equal(params.real_score, 5.4);
+        assert.equal(params.score, 4.5);
+        assert.equal(params.score_detail, scoreDetail);
+    }
+});
+
 test('links local XML paths and submitted detail URLs by filename', () => {
     assert.equal(scoreProfileKey('C:\\Temp\\record_123.xml'), 'record_123.xml');
     assert.equal(scoreProfileKey('https://cdn.example/xml/Record_123.xml?x=1'), 'record_123.xml');

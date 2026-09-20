@@ -94,29 +94,28 @@ function scoreProfileKey(pathOrUrl) {
 
 function applyReadingScorePayload(params, profile) {
     if (!params || typeof params !== 'object' || !profile?.dimensions) return null;
-    let detail;
+    let detail = null;
     try {
         detail = typeof params.score_detail === 'string' ? JSON.parse(params.score_detail) : params.score_detail;
-    } catch (error) {
-        return null;
-    }
-    if (!detail || typeof detail !== 'object' || Array.isArray(detail)) return null;
+    } catch (error) {}
+    if (!detail || typeof detail !== 'object' || Array.isArray(detail)) detail = null;
 
     const scores = calculateAdjustedScores(params.question_type_score, profile.percentage, params.graduation, 0);
     if (!scores) return null;
 
-    // The 5.7.9 client gets these fields directly from XML attributes, so keep
-    // their original six-decimal string representation in the API payload.
-    detail.accuracy_score = toEngineScore(profile.dimensions.accuracy);
-    detail.fluency_score = toEngineScore(profile.dimensions.fluency);
-    detail.integrity_score = toEngineScore(profile.dimensions.integrity);
-    detail.dimension_result = [profile.dimensions.accuracy, profile.dimensions.fluency, profile.dimensions.integrity];
-    detail.total_score = scores.normalizedScore;
-    detail.real_score = scores.questionScore;
-
-    params.score_detail = JSON.stringify(detail);
     params.score = scores.normalizedScore;
     params.real_score = scores.questionScore;
+    if (detail) {
+        // The 5.7.9 client gets these fields directly from XML attributes, so keep
+        // their original six-decimal string representation in the API payload.
+        detail.accuracy_score = toEngineScore(profile.dimensions.accuracy);
+        detail.fluency_score = toEngineScore(profile.dimensions.fluency);
+        detail.integrity_score = toEngineScore(profile.dimensions.integrity);
+        detail.dimension_result = [profile.dimensions.accuracy, profile.dimensions.fluency, profile.dimensions.integrity];
+        detail.total_score = scores.normalizedScore;
+        detail.real_score = scores.questionScore;
+        params.score_detail = JSON.stringify(detail);
+    }
     return { detail, scores, dimensions: profile.dimensions };
 }
 

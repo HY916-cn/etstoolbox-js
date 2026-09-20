@@ -118,12 +118,13 @@ window.addEventListener('DOMContentLoaded', async () => {
                                 score: params.score,
                                 real_score: params.real_score,
                                 question_type_score: params.question_type_score,
-                                total_score: result.detail.total_score,
-                                accuracy_score: result.detail.accuracy_score,
-                                fluency_score: result.detail.fluency_score,
-                                integrity_score: result.detail.integrity_score,
+                                total_score: result.detail?.total_score,
+                                accuracy_score: result.detail?.accuracy_score,
+                                fluency_score: result.detail?.fluency_score,
+                                integrity_score: result.detail?.integrity_score,
                                 percentage: result.scores.percentage,
-                                xml_linked: Boolean(linkedProfile)
+                                xml_linked: Boolean(linkedProfile),
+                                score_detail_updated: Boolean(result.detail)
                             });
                             if (profileKey) readingScoreProfiles.delete(profileKey);
                             modified = true;
