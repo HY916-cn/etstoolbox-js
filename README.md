@@ -1,5 +1,8 @@
 # ETSToolbox 前端
 
+> [!WARNING]
+> **由于官方修复，本项目已停用，不再维护。**
+
 本仓库包含 ETSToolbox 的设置面板、页面处理和交互自动化脚本。普通用户应从 [ETSToolbox 主仓库](https://github.com/HY916-cn/ETSToolbox)下载完整 Windows 发行包，无需单独安装本仓库的构建产物。
 
 > [!WARNING]
